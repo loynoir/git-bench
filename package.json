@@ -1,0 +1,19 @@
+{
+  "name": "git-bench",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tool.mjs test",
+    "bench": "npm test && node tool.mjs bench | tee bench.txt"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "execa": "^7.1.1",
+    "isomorphic-git": "^1.23.0",
+    "nodegit": "^0.27.0",
+    "simple-git": "^3.17.0",
+    "tinybench": "^2.4.0"
+  }
+}
