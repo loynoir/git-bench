@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { deepStrictEqual } from "node:assert";
+import { deepStrictEqual, rejects } from "node:assert";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 
@@ -99,10 +99,22 @@ function md5sum(content) {
   return hashFunc.digest("hex");
 }
 
+// https://github.com/isomorphic-git/isomorphic-git/issues/1163
+const bug_isomorphicGit_1163 = true;
+
 switch (process.argv[2]) {
   case "test":
     deepStrictEqual(md5sum(await nodegit_show()), config.md5);
-    deepStrictEqual(md5sum(await isomorphicGit_show()), config.md5);
+
+    if (bug_isomorphicGit_1163) {
+      await rejects(
+        async () => md5sum(await isomorphicGit_show()),
+        "TypeError: Cannot read properties of null (reading 'slice')"
+      );
+    } else {
+      deepStrictEqual(md5sum(await isomorphicGit_show()), config.md5);
+    }
+
     deepStrictEqual(md5sum(await simpleGit_show()), config.md5);
     deepStrictEqual(md5sum(await execFile_show()), config.md5);
     deepStrictEqual(md5sum(await execa_show()), config.md5);
@@ -110,12 +122,13 @@ switch (process.argv[2]) {
   case "bench":
     const bench = new Bench({ time: config.count });
 
-    bench
-      .add(nodegit_show.name, nodegit_show)
-      .add(isomorphicGit_show.name, isomorphicGit_show)
-      .add(simpleGit_show.name, simpleGit_show)
-      .add(execFile_show.name, execFile_show)
-      .add(execa_show.name, execa_show);
+    bench.add(nodegit_show.name, nodegit_show);
+    if (!bug_isomorphicGit_1163) {
+      bench.add(isomorphicGit_show.name, isomorphicGit_show);
+    }
+    bench.add(simpleGit_show.name, simpleGit_show);
+    bench.add(execFile_show.name, execFile_show);
+    bench.add(execa_show.name, execa_show);
 
     await bench.run();
 
